@@ -4,12 +4,15 @@ import DropdownMenu from './DropdownMenu';
 import Alert from './Alert';
 import GestionarCategorias from './GestionarCategorias';
 import GestionarServicios from './GestionarServicios';
+import GestionarMascotas from './GestionarMascotas';
 
 const Dashboard = () => {
   const role = localStorage.getItem('userRole');
   const correo = localStorage.getItem('userCorreo');
   const id = localStorage.getItem('userId');
   const navigate = useNavigate();
+
+  console.log('Valores de localStorage en Dashboard:', { role, correo, id }); // Log para depuración
 
   const [categorias, setCategorias] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -95,6 +98,16 @@ const Dashboard = () => {
 
   if (!role) return null;
 
+  if (role === 'dueno' && !id) {
+    return (
+      <div className="container mt-4">
+        <div className="alert alert-danger">
+          Error: No se encontró el ID del usuario. Por favor, inicia sesión nuevamente.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mt-4">
       <div className="bg-primary text-white p-3 rounded d-flex justify-content-between align-items-center">
@@ -115,11 +128,11 @@ const Dashboard = () => {
         )}
         {currentSection === 'categorias' && role === 'administrador' && (
           <GestionarCategorias
-          categorias={categorias}
             loadCategorias={loadCategorias}
             setSuccess={setSuccess}
             setError={setError}
             userId={id}
+            categorias={categorias}
           />
         )}
         {currentSection === 'servicios' && (role === 'autonomo' || role === 'empresa') && (
@@ -144,13 +157,12 @@ const Dashboard = () => {
             </ul>
           </div>
         )}
-        {currentSection === 'serviciosPorMascota' && role === 'dueno' && (
-          <div className="mt-4">
-            <h3 className="h4 mb-3">Gestionar Servicios por Mascota</h3>
-            <p className="text-muted">
-              Aquí podrás registrar servicios por mascota una vez que el microservicio de mascotas esté disponible.
-            </p>
-          </div>
+        {currentSection === 'serviciosPorMascota' && role === 'dueno' && id && (
+          <GestionarMascotas
+            setSuccess={setSuccess}
+            setError={setError}
+            userId={id}
+          />
         )}
       </div>
     </div>

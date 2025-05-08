@@ -20,6 +20,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/MicroServicioMascotas': {
+        target: 'http://localhost:7000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/MicroServicioMascotas/, ''),
+      },
     },
   },
 });

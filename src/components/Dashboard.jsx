@@ -1,3 +1,5 @@
+
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DropdownMenu from './DropdownMenu';
@@ -16,9 +18,24 @@ const Dashboard = () => {
 
   const [categorias, setCategorias] = useState([]);
   const [servicios, setServicios] = useState([]);
+  const [mascotas, setMascotas] = useState([]);
   const [currentSection, setCurrentSection] = useState('home');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+
+  const loadMascotas = useCallback(async () => {
+    try {
+      const response = await fetch(`/MicroServicioMascotas/mascotas/dueno/${id}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+      });
+      if (!response.ok) throw new Error(`Error al cargar mascotas: HTTP ${response.status}`);
+      const data = await response.json();
+      setMascotas(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }, [id, setError]);
 
   const loadCategorias = useCallback(async () => {
     try {
@@ -32,7 +49,7 @@ const Dashboard = () => {
       setError('Error al cargar categorías: ' + err.message);
       setCategorias([]);
     }
-  }, []);
+  }, [setError]);
 
   const loadServicios = useCallback(async () => {
     try {
@@ -50,7 +67,7 @@ const Dashboard = () => {
       setError('Error al cargar servicios: ' + err.message);
       setServicios([]);
     }
-  }, []);
+  }, [setError]);
 
   useEffect(() => {
     if (!role) {
@@ -58,8 +75,11 @@ const Dashboard = () => {
     } else {
       loadCategorias();
       loadServicios();
+      if (role === 'dueno' && id && id !== 'undefined') {
+        loadMascotas();
+      }
     }
-  }, [role, navigate, loadCategorias, loadServicios]);
+  }, [role, id, navigate, loadCategorias, loadServicios, loadMascotas]);
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
@@ -159,6 +179,8 @@ const Dashboard = () => {
         )}
         {currentSection === 'serviciosPorMascota' && role === 'dueno' && id && (
           <GestionarMascotas
+            mascotas={mascotas}
+            loadMascotas={loadMascotas}
             setSuccess={setSuccess}
             setError={setError}
             userId={id}

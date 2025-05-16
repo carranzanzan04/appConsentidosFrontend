@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const GestionarMascotas = ({ setSuccess, setError, userId }) => {
-  const [mascotas, setMascotas] = useState([]);
+const GestionarMascotas = ({ mascotas = [], loadMascotas, setSuccess, setError, userId }) => {
   const [tipos, setTipos] = useState([]);
   const [razas, setRazas] = useState([]);
   const [nombre, setNombre] = useState('');
@@ -11,10 +10,9 @@ const GestionarMascotas = ({ setSuccess, setError, userId }) => {
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [editId, setEditId] = useState(null);
 
-  // Cargar tipos y mascotas iniciales
-  const loadData = useCallback(async () => {
+  // Cargar tipos iniciales
+  const loadTipos = useCallback(async () => {
     try {
-      // Cargar tipos
       const tiposResponse = await fetch('/MicroServicioMascotas/mascotas/tipos', {
         method: 'GET',
         headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
@@ -23,22 +21,12 @@ const GestionarMascotas = ({ setSuccess, setError, userId }) => {
       const tiposData = await tiposResponse.json();
       console.log('Tipos recibidos:', tiposData); // Log para depuración
       setTipos(Array.isArray(tiposData) ? tiposData : []);
-
-      // Cargar mascotas
-      const mascotasResponse = await fetch(`/MicroServicioMascotas/mascotas/dueno/${userId}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
-      });
-      if (!mascotasResponse.ok) throw new Error(`Error al cargar mascotas: HTTP ${mascotasResponse.status}`);
-      const mascotasData = await mascotasResponse.json();
-      console.log('Mascotas recibidas:', mascotasData); // Log para depuración
-      setMascotas(Array.isArray(mascotasData) ? mascotasData : []);
       setError(''); // Limpiar errores previos
     } catch (err) {
       setError(err.message);
-      console.error('Error en loadData:', err); // Log para errores
+      console.error('Error al cargar tipos:', err); // Log para errores
     }
-  }, [userId, setError]);
+  }, [setError]);
 
   // Cargar razas cuando cambia el tipo
   const fetchRazasByTipo = useCallback(async (tipoId) => {
@@ -64,9 +52,9 @@ const GestionarMascotas = ({ setSuccess, setError, userId }) => {
 
   useEffect(() => {
     if (userId && userId !== 'undefined') {
-      loadData();
+      loadTipos();
     }
-  }, [userId, loadData]);
+  }, [userId, loadTipos]);
 
   useEffect(() => {
     fetchRazasByTipo(tipoId);
@@ -132,22 +120,25 @@ const GestionarMascotas = ({ setSuccess, setError, userId }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mascotaData),
       });
-      if (!response.ok) throw new Error(`Error al guardar mascota: HTTP ${response.status}`);
-      const result = await response.json();
-      console.log('Resultado de guardar mascota:', result); // Log para depuración
-      if (result.success) {
-        setSuccess(result.message || (editId ? 'Mascota actualizada' : 'Mascota creada'));
-        await loadData(); // Asegurar que loadData se complete
-        // Limpiar formulario
-        setNombre('');
-        setTipoId('');
-        setRazaId('');
-        setPeso('');
-        setFechaNacimiento('');
-        setEditId(null);
-      } else {
-        setError(result.message || 'Error al guardar mascota');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al guardar mascota: HTTP ${response.status} - ${errorText || 'No se recibió mensaje de error'}`);
       }
+
+      const result = await response.json();
+      console.log('Resultado de guardar mascota:', result); // Log detallado para depuración
+
+      // Considerar la operación exitosa si la respuesta es HTTP 200/201, incluso sin success
+      setSuccess(result.message || (editId ? 'Mascota actualizada' : 'Mascota creada'));
+      loadMascotas(); // Recargar la lista de mascotas
+      // Limpiar formulario
+      setNombre('');
+      setTipoId('');
+      setRazaId('');
+      setPeso('');
+      setFechaNacimiento('');
+      setEditId(null);
     } catch (err) {
       setError(`Error al guardar mascota: ${err.message}`);
       console.error('Error en handleCrearMascota:', err); // Log para errores
@@ -168,15 +159,18 @@ const GestionarMascotas = ({ setSuccess, setError, userId }) => {
       const response = await fetch(`/MicroServicioMascotas/mascotas/delete/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error(`Error al eliminar mascota: HTTP ${response.status}`);
-      const result = await response.json();
-      console.log('Resultado de eliminar mascota:', result); // Log para depuración
-      if (result.success) {
-        setSuccess('Mascota eliminada');
-        await loadData(); // Asegurar que loadData se complete
-      } else {
-        setError(result.message || 'Error al eliminar mascota');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error al eliminar mascota: HTTP ${response.status} - ${errorText || 'No se recibió mensaje de error'}`);
       }
+
+      const result = await response.json();
+      console.log('Resultado de eliminar mascota:', result); // Log detallado para depuración
+
+      // Considerar la operación exitosa si la respuesta es HTTP 200/204, incluso sin success
+      setSuccess(result.message || 'Mascota eliminada');
+      loadMascotas(); // Recargar la lista de mascotas
     } catch (err) {
       setError(`Error al eliminar mascota: ${err.message}`);
       console.error('Error en handleEliminarMascota:', err); // Log para errores

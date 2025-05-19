@@ -6,12 +6,18 @@ import DropdownMenu from './DropdownMenu';
 import Alert from './Alert';
 import GestionarCategorias from './GestionarCategorias';
 import GestionarServicios from './GestionarServicios';
+import GestionarServicios2 from './GestionarServicios2';
 import GestionarMascotas from './GestionarMascotas';
 
 const Dashboard = () => {
   const role = localStorage.getItem('userRole');
   const correo = localStorage.getItem('userCorreo');
   const id = localStorage.getItem('userId');
+  const nombre = localStorage.getItem('nombre');
+  let apellido = '';
+  if(role!='empresa'){
+         apellido = localStorage.getItem('apellido');
+        }
   const navigate = useNavigate();
 
   console.log('Valores de localStorage en Dashboard:', { role, correo, id }); // Log para depuración
@@ -52,22 +58,27 @@ const Dashboard = () => {
   }, [setError]);
 
   const loadServicios = useCallback(async () => {
-    try {
-      const response = await fetch('/MicroservicioServicios/api/servicios/list', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      const result = await response.json();
-      if (result.success) {
-        setServicios(Array.isArray(result.servicios) ? result.servicios : []);
-      } else {
-        setServicios([]);
-      }
-    } catch (err) {
-      setError('Error al cargar servicios: ' + err.message);
+  try {
+    const response = await fetch(`/api/servicio-servicio/servicio/${id}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await response.json();
+    console.log('Respuesta del backend:', result);
+
+    // Si el backend devuelve un array directamente:
+    if (Array.isArray(result)) {
+      setServicios(result);
+    } else if (result.success && Array.isArray(result.servicios)) {
+      setServicios(result.servicios);
+    } else {
       setServicios([]);
     }
-  }, [setError]);
+  } catch (err) {
+    setError('Error al cargar servicios: ' + err.message);
+    setServicios([]);
+  }
+}, [id, setError]);
 
   useEffect(() => {
     if (!role) {
@@ -85,6 +96,10 @@ const Dashboard = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userCorreo');
     localStorage.removeItem('userId');
+    localStorage.removeItem('nombre');
+    if (role !== 'empresa') {
+      localStorage.removeItem('apellido');
+    }
     navigate('/login');
   };
 
@@ -142,7 +157,7 @@ const Dashboard = () => {
       <div className="mt-4">
         {currentSection === 'home' && (
           <div>
-            <h3 className="h4">Bienvenido, {role}</h3>
+            <h3 className="h4">Bienvenido, {nombre}{apellido ? ` ${apellido}` : ''}</h3>
             <p className="text-muted">Usa el menú para navegar entre las opciones disponibles.</p>
           </div>
         )}
@@ -155,8 +170,9 @@ const Dashboard = () => {
             categorias={categorias}
           />
         )}
+         {console.log('Servicios de :', servicios)}
         {currentSection === 'servicios' && (role === 'autonomo' || role === 'empresa') && (
-          <GestionarServicios
+          <GestionarServicios2
             categorias={categorias}
             loadServicios={loadServicios}
             setSuccess={setSuccess}

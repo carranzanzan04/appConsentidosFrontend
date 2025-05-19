@@ -26,6 +26,11 @@ const Login = () => {
         localStorage.setItem('userRole', result.role);
         localStorage.setItem('userCorreo', result.correo);
         localStorage.setItem('userId',result.id);
+        localStorage.setItem('nombre',result.nombre);
+        if(result.role !== 'empresa'){
+          localStorage.setItem('apellido', result.apellido);
+        }
+
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {
         setError(result.message);

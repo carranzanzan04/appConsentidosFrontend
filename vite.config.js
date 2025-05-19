@@ -26,6 +26,12 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/MicroServicioMascotas/, ''),
       },
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
 });

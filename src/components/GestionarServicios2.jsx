@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './GestionarServicios2.css';
 import defaultImage from '../assets/default.png';
+import PublicarOfertaModal from './PublicarOfertaModal';
 
 const GestionarServicios2 = ({ categorias, loadServicios, setSuccess, setError, servicios = [], userId }) => {
   const [nombre, setNombre] = useState('');
@@ -8,6 +9,8 @@ const GestionarServicios2 = ({ categorias, loadServicios, setSuccess, setError, 
   const [idCategoria, setIdCategoria] = useState('');
   const [serviceImage, setServiceImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedServicio, setSelectedServicio] = useState(null);
+  const [showOfertaModal, setShowOfertaModal] = useState(false);
 
   const handleCrearServicio = async (e) => {
     e.preventDefault();
@@ -80,6 +83,24 @@ const GestionarServicios2 = ({ categorias, loadServicios, setSuccess, setError, 
     }
   };
 
+  // Función para manejar el clic en "Publicar como oferta"
+  const handlePublicarOferta = (servicio) => {
+    setSelectedServicio(servicio);
+    setShowOfertaModal(true);
+  };
+ 
+  // Función para manejar el cierre del modal
+  const handleCloseModal = () => {
+    setShowOfertaModal(false);
+    setSelectedServicio(null);
+  };
+ 
+  // Función para manejar cuando se publica una oferta exitosamente
+  const handleOfertaPublicada = () => {
+    setSuccess('Oferta publicada exitosamente');
+    loadServicios(); // Si necesitas recargar los servicios
+  };
+ 
   return (
     <div className="gestionar-servicios-container">
       <h3 className="gestionar-servicios-title">Gestionar Servicios</h3>
@@ -186,6 +207,7 @@ const GestionarServicios2 = ({ categorias, loadServicios, setSuccess, setError, 
                 <button
                   className="publicar-button"
                   aria-label={`Publicar ${servicio.serviceName} como oferta`}
+                  onClick={() => handlePublicarOferta(servicio)}
                 >
                   Publicar como oferta
                 </button>
@@ -194,6 +216,17 @@ const GestionarServicios2 = ({ categorias, loadServicios, setSuccess, setError, 
           ))}
         </div>
       )}
+      {/* Modal de Publicar Oferta */}
+      {selectedServicio && (
+        <PublicarOfertaModal
+          servicio={selectedServicio}
+          isOpen={showOfertaModal}
+          onClose={handleCloseModal}
+          onOfertaPublicada={handleOfertaPublicada}
+          initialIdPrestador={userId}
+        />
+      )}
+ 
     </div>
   );
 };
